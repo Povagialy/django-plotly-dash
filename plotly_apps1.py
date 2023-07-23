@@ -47,121 +47,44 @@ from dash.exceptions import PreventUpdate
 from django_plotly_dash import DjangoDash
 from django_plotly_dash.consumers import send_to_pipe_channel
 
-import pandas as pd
-result = pd.read_excel('/Users/bekhterevstas/Documents/Code/result_1.xlsx')
-result_temp = pd.read_excel('/Users/bekhterevstas/Documents/Code/result_temp.xlsx')
 
-slicer = ['0 - 5', '51 - 100', '101 - 150', '251 - 500', '201 - 250', '1 001 - 5 000']
-
-def Agplomeration(slicer, liders_type, liders, data_graph, pok):
-    if pok == 'численность':
-        data_local = pd.DataFrame([[liders_type, liders_type, liders_type, liders_type, liders_type, pok],
-                [liders[~liders[pok + '1'].isin(slicer)]['численность1'].astype(float).median(),
-                liders[~liders[pok + '2'].isin(slicer)]['численность2'].astype(float).median(),
-                liders[~liders[pok + '3'].isin(slicer)]['численность3'].astype(float).median(),
-                liders[~liders[pok + '4'].isin(slicer)]['численность4'].astype(float).median(),
-                liders[~liders[pok + '5'].isin(slicer)]['численность5'].astype(float).median()],
-                ['1 год жизни', '2 год жизни', '3 год жизни', '4 год жизни', '5 год жизни']]).transpose()
-        data_local.columns = ['Тип организаций', 'Медиана', 'Год жизни']
-    if pok == 'темп':
-        data_local = pd.DataFrame([[liders_type, liders_type, liders_type, liders_type],
-                [liders[~liders['численность2темп'].isin(slicer)]['численность2темп'].astype(float).median(),
-                liders[~liders['численность3темп'].isin(slicer)]['численность3темп'].astype(float).median(),
-                liders[~liders['численность4темп'].isin(slicer)]['численность4темп'].astype(float).median(),
-                liders[~liders['численность5темп'].isin(slicer)]['численность5темп'].astype(float).median()],
-                ['2 год жизни', '3 год жизни', '4 год жизни', '5 год жизни']]).transpose()
-        data_local.columns = ['Тип организаций', 'Медиана','Год жизни']
-    if len(data_graph) == 0:
-        data_graph = data_local
-    else:
-        data_graph = pd.concat([data_graph, data_local])
-    return data_graph
-pok = 'численность'
-pok1 = 'темп'
-data_graph = []
-data_graph_temp = []
-liders_type = 'Лидеры'
-liders = result[result[liders_type]=='да']
-liders1 = result_temp[result_temp[liders_type]=='да']
-data_graph = Agplomeration(slicer, liders_type, liders, data_graph, pok)
-data_graph_temp = Agplomeration(slicer, liders_type, liders1, data_graph_temp, pok1)
-
-liders_type = 'Лидеры из лидеров'
-liders = result[result['Лидерыизлидеров']=='да']
-liders1 = result_temp[result_temp['Лидерыизлидеров']=='да']
-data_graph = Agplomeration(slicer, liders_type, liders, data_graph, pok)
-data_graph_temp = Agplomeration(slicer, liders_type, liders1, data_graph_temp, pok1)
-
-liders_type = 'Устойчивые лидеры'
-liders = result[result['Устойчивыелидеры']=='да']
-liders1 = result_temp[result_temp['Устойчивыелидеры']=='да']
-data_graph = Agplomeration(slicer, liders_type, liders, data_graph, pok)
-data_graph_temp = Agplomeration(slicer, liders_type, liders1, data_graph_temp, pok1)
-
-liders_type = 'Не лидеры'
-liders = result[result['Лидеры']!='да']
-#liders1 = result_temp[result_temp['Лидеры']!='да']
-data_graph = Agplomeration(slicer, liders_type, liders, data_graph, pok)
-#data_graph_temp = Agplomeration(slicer, liders_type, liders1, data_graph_temp, pok1)
-
-liders_type = 'Все МСП'
-liders = result
-#liders1 = result_temp
-data_graph = Agplomeration(slicer, liders_type, liders, data_graph, pok)
-#data_graph_temp = Agplomeration(slicer, liders_type, liders1, data_graph_temp, pok1)
 #pylint: disable=too-many-arguments, unused-argument, unused-variable
-import plotly.express as px
 
-# Incorporate data
-df = data_graph
-df1 = data_graph_temp
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = DjangoDash('SimpleExample', external_stylesheets=external_stylesheets)
+app = DjangoDash('SimpleExample')
 
-colors = {
-    'background': '#FFFFFF',
-    'text': '#000000'
-}
-# App layout
-app.layout = html.Div(style={'backgroundColor': colors['background'], 'width': '100%', 'height': '1080px;'}, children=[
-    html.Div(style={'display': 'flex','height': '1080px;'}, children=[
-            dcc.Dropdown(options=['Лидеры', 'Лидеры из лидеров', 'Устойчивые лидеры', 'Не лидеры', 'Все МСП'],
-                        value=['Лидеры', 'Лидеры из лидеров', 'Все МСП'],
-                        multi=True,
-                        id='Dropdown',
-                        style={'width': '50%', 'flex': '1'}),
-            dcc.Dropdown(options=['1 год жизни', '2 год жизни', '3 год жизни', '4 год жизни', '5 год жизни'],
-                            value= ['2 год жизни','3 год жизни', '4 год жизни', '5 год жизни'],
-                            multi=True,
-                            id='myradiofinal',
-                            style={'width': '50%', 'flex': '1'})]),
-    html.Div(style={'display': 'flex'}, children=
-    [
-        html.Div(dcc.Graph(figure={}, id='histofinal'), style={'width': '50%', 'flex': '1'}),
-        html.Div(dcc.Graph(figure={}, id='chartfinal'), style={'width': '50%', 'flex': '1'})
-    ])
+app.layout = html.Div([
+    dcc.RadioItems(
+        id='dropdown-color',
+        options=[{'label': c, 'value': c.lower()} for c in ['Red', 'Green', 'Blue']],
+        value='red'
+    ),
+    html.Div(id='output-color'),
+    dcc.RadioItems(
+        id='dropdown-size',
+        options=[{'label': i, 'value': j} for i, j in [('L', gettext('large')),
+                                                       ('M', gettext_lazy('medium')),
+                                                       ('S', 'small')]],
+        value='medium'
+    ),
+    html.Div(id='output-size')
+
 ])
 
-# Add controls to build the interaction
 @app.callback(
-    dash.dependencies.Output(component_id='chartfinal', component_property='figure'),
-    dash.dependencies.Input(component_id='myradiofinal', component_property='value'),
-    dash.dependencies.Input(component_id='Dropdown', component_property='value')
-)
-def update_graph1(myradiofinal, Dropdown):
-    datas2 = df1[df1['Год жизни'].isin(myradiofinal)]
-    #datas2 = datas2[datas2['Тип организаций'].isin(Dropdown)]
-    fig = px.bar(datas2, x='Год жизни', y="Медиана", barmode='group', color='Тип организаций', title = 'Темп прироста среднесписочной численности, %')
-    return fig
+    dash.dependencies.Output('output-color', 'children'),
+    [dash.dependencies.Input('dropdown-color', 'value')])
+def callback_color(dropdown_value):
+    'Change output message'
+    return "The selected color is %s." % dropdown_value
 
 @app.callback(
-    dash.dependencies.Output(component_id='histofinal', component_property='figure'),
-    dash.dependencies.Input(component_id='Dropdown', component_property='value')
-)
-def update_graph2(Dropdown):
-    datas2 = data_graph[data_graph['Тип организаций'].isin(Dropdown)]
-    fig = px.line(datas2, x="Год жизни", y="Медиана", color="Тип организаций", title = 'Динамика медианы среднесписочной численности <br> работников в первые 5 лет жизни предприятий, чел.')
-    return fig
+    dash.dependencies.Output('output-size', 'children'),
+    [dash.dependencies.Input('dropdown-color', 'value'),
+     dash.dependencies.Input('dropdown-size', 'value')])
+def callback_size(dropdown_color, dropdown_size):
+    'Change output message'
+    return "The chosen T-shirt is a %s %s one." %(dropdown_size,
+                                                  dropdown_color)
 
 a2 = DjangoDash("Ex2",
                 serve_locally=True)
